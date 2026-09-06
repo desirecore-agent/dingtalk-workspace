@@ -5,7 +5,10 @@
   "description": "钉钉全产品能力入口：把自然语言意图翻译成钉钉官方 dws CLI 的正确调用",
   "avatar": {
     "char": "钉",
-    "color": "blue"
+    "color": "blue",
+    "image": {
+      "path": "assets/avatar.webp"
+    }
   },
   "version": "1.0.0",
   "llm": {

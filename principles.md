@@ -29,19 +29,38 @@
 
    一次查不到就改用 `dws <svc> --help` 看真实命令名。**不要连续猜三次**——那会把一整轮时间耗光却什么都没做成。
 
-4. **读技能参考文档要用上下文给的 `<skill-dir>`，不要猜路径。** 每个技能在 `<skills>` 块里都带 `<skill-dir>` 绝对路径（并有 `<skill-resources>` 列出可读文件）。官方钉钉技能的 `SKILL.md` 用**相对路径**引用 `references/xxx.md`，必须拼在它自己的 `<skill-dir>` 上。
+4. **schema 标的 `availability: unavailable` 不是终局，先试再说。** 实测证明这个标注不可信——同一个 `unavailable` 底下混着三种完全不同的真实状态：
+
+   | 实测样本 | schema 标注 | 真实情况 |
+   | --- | --- | --- |
+   | `contact +list-roster-fields` | unavailable | **其实完全可用**，成功返回花名册字段列表 |
+   | `hrbrain +list-pools` | unavailable | 上游响应缺 `success` 字段被 dws 严格校验挡下，**不是没能力** |
+   | `live +list-my-lives` | unavailable | 上游 `total>0` 却返回空列表，同样是**校验拒绝** |
+
+   **所以看到 `unavailable` 不要直接回复用户「这个功能不支持」。** 正确做法是**先按只读方式试一次**，再按真实报错分诊（见 L2 降级矩阵）：
+
+   - 真跑通了 → 正常给结果
+   - 报 `missing_success` / `missing_collection` 等校验类错误 → 说明**上游数据有问题**，不是能力缺失，如实说明「这次拿不到可信结果」
+   - 报权限 / 权益类错误 → 按降级矩阵说明缺什么
+   - 真的 `command not found` 或明确不支持 → 才说不支持
+
+   **只有写操作例外**：标了 `unavailable` 的写操作不要拿真实数据去试，先问用户。
+
+   已知 `hrbrain` 域 22 个工具里有 11 个标 `unavailable`，该域可靠性存疑，作答时留余地。
+
+5. **读技能参考文档要用上下文给的 `<skill-dir>`，不要猜路径。** 每个技能在 `<skills>` 块里都带 `<skill-dir>` 绝对路径（并有 `<skill-resources>` 列出可读文件）。官方钉钉技能的 `SKILL.md` 用**相对路径**引用 `references/xxx.md`，必须拼在它自己的 `<skill-dir>` 上。
 
    特别注意：**官方 `dingtalk-*` 技能装在全局技能目录，不在你的私有技能目录下。** 去猜 `<你的 agent 目录>/skills/dingtalk-shared/SKILL.md` 必然找不到。
-5. **写操作先向用户确认，用户同意后才加 `--yes`。** 判据用三元组兜底，**不能只看 `confirmation` 字段**：
+6. **写操作先向用户确认，用户同意后才加 `--yes`。** 判据用三元组兜底，**不能只看 `confirmation` 字段**：
 
    `effect == destructive || risk == high || confirmation == user_required`
 
    原因：1256 个工具里有 339 个是 silent-write——dws 自己不拦的写操作，占全部写操作的 56%；且存在 `dws dev connect restart` 这种 destructive + high 却 `confirmation=not_required` 的反例。
-6. **单次批量操作不超过 30 条。**
-7. **多候选禁止默认取第一个。** 人员重名要让用户选；多组织场景下没有 `isOrgCurrent=true` 时，禁止选第一项、最近登录或最近使用的账号。**解析目标、读取上下文、最终执行必须使用同一个 profile。**
-8. **退出码不等于成功。** 逐条核对：`partial_success` 不是完成；`unknown` 先回读再决定，禁止直接重写；只有 `data.complete=true` 才能说「全部」；响应里缺少集合**不能**当空结果；下载要验 `sizeBytes > 0`；缺哈希时不虚构端到端校验和。
-9. **存在 `error` 键不等于出错。** 判据是 `ok === false` 或 `error` 是**非空对象**。`"error": {}` 空对象是成功响应的正常形态。
-10. **实时事件用长连接，不轮询。** 普通 IM 消息、reaction、已读、撤回走 `dws event +listen-im`；OA 审批、群生命周期、明确的原始 EventKey、Filter DSL 走 `dws event consume --flatten`。
+7. **单次批量操作不超过 30 条。**
+8. **多候选禁止默认取第一个。** 人员重名要让用户选；多组织场景下没有 `isOrgCurrent=true` 时，禁止选第一项、最近登录或最近使用的账号。**解析目标、读取上下文、最终执行必须使用同一个 profile。**
+9. **退出码不等于成功。** 逐条核对：`partial_success` 不是完成；`unknown` 先回读再决定，禁止直接重写；只有 `data.complete=true` 才能说「全部」；响应里缺少集合**不能**当空结果；下载要验 `sizeBytes > 0`；缺哈希时不虚构端到端校验和。
+10. **存在 `error` 键不等于出错。** 判据是 `ok === false` 或 `error` 是**非空对象**。`"error": {}` 空对象是成功响应的正常形态。
+11. **实时事件用长连接，不轮询。** 普通 IM 消息、reaction、已读、撤回走 `dws event +listen-im`；OA 审批、群生命周期、明确的原始 EventKey、Filter DSL 走 `dws event consume --flatten`。
 
 ### 禁止做
 
