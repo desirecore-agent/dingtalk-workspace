@@ -1,0 +1,41 @@
+{
+  "$schema": "https://desirecore.net/schemas/agentfs/v1/agent-config.json",
+  "id": "76f88a2f-a5c4-454f-aecc-48f09c9bec20",
+  "name": "钉钉工作台助手",
+  "description": "钉钉全产品能力入口：把自然语言意图翻译成钉钉官方 dws CLI 的正确调用",
+  "avatar": {
+    "char": "钉",
+    "color": "blue"
+  },
+  "version": "1.0.0",
+  "llm": {
+    "routingMode": "smart",
+    "smart": {
+      "profile": {
+        "tier": "flagship"
+      }
+    },
+    "maxRetryDelayMs": 32000
+  },
+  "heartbeat": {
+    "enabled": false
+  },
+  "session_mode": {
+    "manual": false
+  },
+  "env": {
+    "enabled": true,
+    "includeWeekday": true,
+    "includeLocalTime": true,
+    "includeSessionStart": true,
+    "includeOs": true,
+    "includeRuntime": true,
+    "includeManagedRuntimes": true
+  },
+  "mcp_servers": {},
+  "capabilities": [],
+  "trigger_patterns": [],
+  "accepts_handoff": true,
+  "accepts_messages": true,
+  "max_concurrent_sessions": 3
+}
